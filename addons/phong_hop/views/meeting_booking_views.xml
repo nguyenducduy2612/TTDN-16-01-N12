@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Tree View -->
+    <record id="view_meeting_booking_tree" model="ir.ui.view">
+        <field name="name">meeting.booking.tree</field>
+        <field name="model">meeting.booking</field>
+        <field name="arch" type="xml">
+            <tree string="Danh sách đặt phòng">
+                <field name="meeting_room_id"/>
+                <field name="start_time"/>
+                <field name="end_time"/>
+                <field name="organizer_id"/>
+                <field name="description"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="view_meeting_booking_form" model="ir.ui.view">
+        <field name="name">meeting.booking.form</field>
+        <field name="model">meeting.booking</field>
+        <field name="arch" type="xml">
+            <form string="Đặt phòng">
+                <sheet>
+                    <div class="oe_title">
+                        <label for="description" class="oe_edit_only"/>
+                        <h1>
+                            <field name="description" placeholder="Mục đích cuộc họp..."/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="meeting_room_id"/>
+                            <field name="organizer_id"/>
+                        </group>
+                        <group>
+                            <field name="start_time"/>
+                            <field name="end_time"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    
+    <!-- Calendar View -->
+    <record id="view_meeting_booking_calendar" model="ir.ui.view">
+        <field name="name">meeting.booking.calendar</field>
+        <field name="model">meeting.booking</field>
+        <field name="arch" type="xml">
+            <calendar string="Lịch đặt phòng" date_start="start_time" date_stop="end_time" color="meeting_room_id">
+                <field name="description"/>
+                <field name="meeting_room_id"/>
+                <field name="organizer_id"/>
+            </calendar>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_meeting_booking" model="ir.actions.act_window">
+        <field name="name">Mượn phòng</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">meeting.booking</field>
+        <field name="view_mode">tree,form,calendar</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Tạo lịch đặt phòng mới
+            </p>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Top level menu -->
+    <menuitem id="menu_phong_hop_root" name="Phòng họp" sequence="10"/>
+
+    <!-- Sub menu -->
+    <menuitem id="menu_meeting_room_main" name="Quản lý phòng" parent="menu_phong_hop_root" sequence="10"/>
+    <menuitem id="menu_meeting_booking_main" name="Quản lý đặt phòng" parent="menu_phong_hop_root" sequence="20"/>
+
+    <!-- Acion menu -->
+    <menuitem id="menu_meeting_room_list"
+              name="Danh sách phòng họp"
+              parent="menu_meeting_room_main"
+              action="action_meeting_room"
+              sequence="10"/>
+              
+    <menuitem id="menu_meeting_booking_list"
+              name="Danh sách mượn phòng"
+              parent="menu_meeting_booking_main"
+              action="action_meeting_booking"
+              sequence="10"/>
+</odoo>
