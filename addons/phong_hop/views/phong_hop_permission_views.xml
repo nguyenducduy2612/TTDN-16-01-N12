@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Tree View -->
+        <record id="view_phong_hop_permission_tree" model="ir.ui.view">
+            <field name="name">phong_hop.permission.tree</field>
+            <field name="model">phong_hop.permission</field>
+            <field name="arch" type="xml">
+                <tree string="Phân quyền phòng họp">
+                    <field name="ten_quyen"/>
+                    <field name="permission_type"/>
+                    <field name="nhan_vien_id" attrs="{'invisible': [('permission_type', '!=', 'user')]}"/>
+                    <field name="phong_ban_id" attrs="{'invisible': [('permission_type', '!=', 'phong_ban')]}"/>
+                    <field name="chuc_vu_id" attrs="{'invisible': [('permission_type', '!=', 'chuc_vu')]}"/>
+                    <field name="can_create_booking" widget="boolean_toggle"/>
+                    <field name="can_approve" widget="boolean_toggle"/>
+                    <field name="auto_approve" widget="boolean_toggle"/>
+                </tree>
+            </field>
+        </record>
+
+        <!-- Form View -->
+        <record id="view_phong_hop_permission_form" model="ir.ui.view">
+            <field name="name">phong_hop.permission.form</field>
+            <field name="model">phong_hop.permission</field>
+            <field name="arch" type="xml">
+                <form string="Phân quyền phòng họp">
+                    <sheet>
+                        <div class="oe_title">
+                            <h1>
+                                <field name="ten_quyen" placeholder="VD: Nhân viên phòng Hành chính"/>
+                            </h1>
+                        </div>
+                        <group>
+                            <group string="Đối tượng phân quyền">
+                                <field name="permission_type" widget="radio"/>
+                                <field name="nhan_vien_id" attrs="{'invisible': [('permission_type', '!=', 'user')], 'required': [('permission_type', '=', 'user')]}" options="{'no_create': True}"/>
+                                <field name="phong_ban_id" attrs="{'invisible': [('permission_type', '!=', 'phong_ban')], 'required': [('permission_type', '=', 'phong_ban')]}" options="{'no_create': True}"/>
+                                <field name="chuc_vu_id" attrs="{'invisible': [('permission_type', '!=', 'chuc_vu')], 'required': [('permission_type', '=', 'chuc_vu')]}" options="{'no_create': True}"/>
+                            </group>
+                            <group string="Quyền hạn">
+                                <field name="can_create_booking"/>
+                                <field name="can_approve"/>
+                                <field name="auto_approve" attrs="{'invisible': [('can_create_booking', '=', False)]}"/>
+                            </group>
+                        </group>
+                        <group>
+                            <group>
+                                <div class="alert alert-info" role="alert" style="margin-bottom: 0px;">
+                                    <p><strong>Hướng dẫn:</strong></p>
+                                    <ul>
+                                        <li><strong>Được mượn phòng:</strong> Cho phép tạo yêu cầu mượn phòng họp</li>
+                                        <li><strong>Được phê duyệt:</strong> Cho phép phê duyệt/từ chối yêu cầu của người khác</li>
+                                        <li><strong>Tự động phê duyệt:</strong> Yêu cầu mượn phòng sẽ tự động được duyệt (không cần chờ)</li>
+                                    </ul>
+                                </div>
+                            </group>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <!-- Action -->
+        <record id="action_phong_hop_permission" model="ir.actions.act_window">
+            <field name="name">Phân quyền tài khoản</field>
+            <field name="res_model">phong_hop.permission</field>
+            <field name="view_mode">tree,form</field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    Tạo quy tắc phân quyền mới
+                </p>
+                <p>
+                    Phân quyền cho phép bạn kiểm soát ai được mượn phòng, ai được phê duyệt yêu cầu.<br/>
+                    Bạn có thể phân quyền theo người dùng cụ thể, theo phòng ban hoặc theo chức vụ.
+                </p>
+            </field>
+        </record>
+    </data>
+</odoo>

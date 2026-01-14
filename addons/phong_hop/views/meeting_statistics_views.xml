@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Wizard Form View -->
+    <record id="view_meeting_statistics_form" model="ir.ui.view">
+        <field name="name">meeting.statistics.form</field>
+        <field name="model">meeting.statistics</field>
+        <field name="arch" type="xml">
+            <form string="Thống kê sử dụng phòng họp">
+                <group>
+                    <group>
+                        <field name="date_from"/>
+                        <field name="date_to"/>
+                    </group>
+                    <group>
+                        <field name="room_ids" widget="many2many_tags"/>
+                    </group>
+                </group>
+                <footer>
+                    <button name="action_view_most_used_rooms" string="Phòng sử dụng nhiều nhất" type="object" class="oe_highlight"/>
+                    <button name="action_view_peak_hours" string="Khung giờ cao điểm" type="object" class="oe_highlight"/>
+                    <button string="Đóng" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action to open wizard -->
+    <record id="action_meeting_statistics" model="ir.actions.act_window">
+        <field name="name">Thống kê phòng họp</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">meeting.statistics</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <!-- Graph view for meeting booking -->
+    <record id="view_meeting_booking_graph" model="ir.ui.view">
+        <field name="name">meeting.booking.graph</field>
+        <field name="model">meeting.booking</field>
+        <field name="arch" type="xml">
+            <graph string="Thống kê đặt phòng" type="bar">
+                <field name="meeting_room_id" type="row"/>
+                <field name="start_time" type="row" interval="hour"/>
+            </graph>
+        </field>
+    </record>
+
+    <!-- Pivot view for meeting booking -->
+    <record id="view_meeting_booking_pivot" model="ir.ui.view">
+        <field name="name">meeting.booking.pivot</field>
+        <field name="model">meeting.booking</field>
+        <field name="arch" type="xml">
+            <pivot string="Phân tích đặt phòng">
+                <field name="meeting_room_id" type="row"/>
+                <field name="start_time" type="col" interval="day"/>
+            </pivot>
+        </field>
+    </record>
+</odoo>

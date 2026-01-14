@@ -20,6 +20,11 @@
                                 <field name="email" />
                             </group>
                         </group>
+                        <group>
+                            <group string="Tài khoản hệ thống">
+                                <field name="user_id" options="{'no_create': True}"/>
+                            </group>
+                        </group>
                         <notebook>
                             <page string="Danh sách lịch sử công tác">
                                 <field name="lich_su_cong_tac_ids"/>

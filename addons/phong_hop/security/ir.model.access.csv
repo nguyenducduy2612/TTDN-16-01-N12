@@ -1,4 +1,6 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_meeting_room,meeting.room,model_meeting_room,base.group_user,1,1,1,1
 access_meeting_booking,meeting.booking,model_meeting_booking,base.group_user,1,1,1,1
-
+access_meeting_statistics,meeting.statistics,model_meeting_statistics,base.group_user,1,1,1,0
+access_phong_hop_permission_user,phong_hop.permission.user,model_phong_hop_permission,base.group_user,1,0,0,0
+access_phong_hop_permission_admin,phong_hop.permission.admin,model_phong_hop_permission,base.group_system,1,1,1,1
