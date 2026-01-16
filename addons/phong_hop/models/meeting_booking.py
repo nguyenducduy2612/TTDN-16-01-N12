@@ -16,36 +16,78 @@ class MeetingBooking(models.Model):
                                   help='Người tạo yêu cầu mượn phòng (tự động)')
     description = fields.Char(string='Mục đích/Ghi chú', required=True)
     
+    # Participant management fields
+    participant_employee_ids = fields.Many2many(
+        'nhan_vien',
+        'meeting_booking_participant_rel',
+        'booking_id',
+        'employee_id',
+        string='Danh sách người tham gia',
+        help='Danh sách nhân viên tham gia cuộc họp (không bao gồm người tổ chức)'
+    )
+    total_attendees = fields.Integer(
+        string='Tổng số người tham gia',
+        compute='_compute_total_attendees',
+        store=True,
+        help='Tổng số người = Người tổ chức (1) + Số người tham gia'
+    )
+    
     # Approval workflow fields
     state = fields.Selection([
         ('draft', 'Chờ duyệt'),
         ('approved', 'Đã duyệt'),
-        ('rejected', 'Từ chối')
+        ('rejected', 'Từ chối'),
+        ('cancelled', 'Đã hủy')
     ], string='Trạng thái', default='draft', required=True, tracking=True)
     approved_by = fields.Many2one('nhan_vien', string='Người phê duyệt', readonly=True)
     approved_date = fields.Datetime(string='Ngày phê duyệt', readonly=True)
+    cancelled_by = fields.Many2one('nhan_vien', string='Người hủy', readonly=True)
+    cancelled_date = fields.Datetime(string='Ngày hủy', readonly=True)
     
     # Computed field to check if booking is currently active
     is_current = fields.Boolean(string='Đang diễn ra', compute='_compute_is_current', store=False)
+    is_in_progress = fields.Boolean(string='Đang diễn ra (Real-time)', compute='_compute_is_in_progress', store=False)
 
+    @api.depends('organizer_id', 'participant_employee_ids')
+    def _compute_total_attendees(self):
+        """Tính tổng số người tham gia = 1 (organizer) + số participants"""
+        for booking in self:
+            booking.total_attendees = 1 + len(booking.participant_employee_ids)
+    
     @api.depends('start_time', 'end_time', 'state')
     def _compute_is_current(self):
-        """Kiểm tra xem lịch họp có đang diễn ra không"""
+        """Kiểm tra xem lịch họp có đang diễn ra không (legacy field)"""
         now = fields.Datetime.now()
         for booking in self:
             booking.is_current = (
                 booking.state == 'approved' and
                 booking.start_time <= now <= booking.end_time
             )
+    
+    @api.depends('start_time', 'end_time', 'state')
+    def _compute_is_in_progress(self):
+        """Kiểm tra xem cuộc họp có đang diễn ra không (real-time)"""
+        now = fields.Datetime.now()
+        for booking in self:
+            booking.is_in_progress = (
+                booking.state == 'approved' and
+                booking.start_time <= now <= booking.end_time
+            )
 
     @api.constrains('start_time', 'end_time', 'meeting_room_id', 'state')
     def _check_overlap(self):
-        """Kiểm tra trùng lịch - chỉ check với các booking đã được duyệt"""
+        """Kiểm tra trùng lịch và validate thời gian"""
         for booking in self:
+            # Validate 1: start_time < end_time
             if booking.start_time >= booking.end_time:
                 raise ValidationError("Thời gian bắt đầu phải nhỏ hơn thời gian kết thúc!")
+            
+            # Validate 2: Không cho booking quá khứ (trừ admin)
+            if not self.env.user.has_group('base.group_system'):
+                if booking.start_time < fields.Datetime.now():
+                    raise ValidationError("Không thể đặt phòng vào thời gian trong quá khứ!")
 
-            # Chỉ check trùng lịch với các booking đã duyệt
+            # Validate 3: Chỉ check trùng lịch với các booking đã duyệt
             domain = [
                 ('meeting_room_id', '=', booking.meeting_room_id.id),
                 ('id', '!=', booking.id),
@@ -55,6 +97,26 @@ class MeetingBooking(models.Model):
             ]
             if self.search_count(domain) > 0:
                 raise ValidationError(f"Phòng {booking.meeting_room_id.name} đã được đặt trong khoảng thời gian này!")
+    
+    @api.constrains('total_attendees', 'meeting_room_id')
+    def _check_room_capacity(self):
+        """Kiểm tra số người tham gia không vượt sức chứa phòng"""
+        for booking in self:
+            if booking.total_attendees > booking.meeting_room_id.capacity:
+                raise ValidationError(
+                    f"Số người tham gia ({booking.total_attendees}) "
+                    f"vượt sức chứa phòng ({booking.meeting_room_id.capacity})."
+                )
+    
+    @api.constrains('organizer_id', 'participant_employee_ids')
+    def _check_participants(self):
+        """Validate danh sách người tham gia"""
+        for booking in self:
+            # Rule: Organizer không được trong danh sách participants
+            if booking.organizer_id in booking.participant_employee_ids:
+                raise ValidationError(
+                    "Người tổ chức không được xuất hiện trong danh sách người tham gia!"
+                )
 
     def action_approve(self):
         """Phê duyệt đăng ký phòng họp - với kiểm tra quyền"""
@@ -107,6 +169,24 @@ class MeetingBooking(models.Model):
                 'state': 'draft',
                 'approved_by': False,
                 'approved_date': False
+            })
+        return True
+    
+    def action_cancel(self):
+        """Hủy đăng ký phòng họp"""
+        for booking in self:
+            if booking.state == 'cancelled':
+                raise ValidationError("Đăng ký đã được hủy trước đó!")
+            
+            # Lấy employee_id nếu có
+            cancelled_by_id = False
+            if hasattr(self.env.user, 'employee_id') and self.env.user.employee_id:
+                cancelled_by_id = self.env.user.employee_id.id
+            
+            booking.write({
+                'state': 'cancelled',
+                'cancelled_by': cancelled_by_id,
+                'cancelled_date': fields.Datetime.now()
             })
         return True
     

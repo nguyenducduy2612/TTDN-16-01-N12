@@ -5,13 +5,23 @@
         <field name="name">meeting.booking.tree</field>
         <field name="model">meeting.booking</field>
         <field name="arch" type="xml">
-            <tree string="Danh sách đặt phòng" decoration-success="state == 'approved'" decoration-muted="state == 'rejected'" decoration-info="state == 'draft'">
+            <tree string="Danh sách đặt phòng" 
+                  decoration-success="state == 'approved' and not is_in_progress" 
+                  decoration-muted="state in ['rejected', 'cancelled']" 
+                  decoration-info="state == 'draft'"
+                  decoration-warning="state == 'approved' and is_in_progress">
                 <field name="meeting_room_id"/>
                 <field name="start_time"/>
                 <field name="end_time"/>
                 <field name="organizer_id"/>
+                <field name="total_attendees"/>
                 <field name="description"/>
-                <field name="state" widget="badge" decoration-success="state == 'approved'" decoration-danger="state == 'rejected'" decoration-info="state == 'draft'"/>
+                <field name="is_in_progress" invisible="1"/>
+                <field name="state" widget="badge" 
+                       decoration-success="state == 'approved'" 
+                       decoration-danger="state == 'rejected'" 
+                       decoration-info="state == 'draft'"
+                       decoration-muted="state == 'cancelled'"/>
             </tree>
         </field>
     </record>
@@ -27,11 +37,21 @@
                             attrs="{'invisible': [('state', '!=', 'draft')]}"/>
                     <button name="action_reject" string="Từ chối" type="object" 
                             attrs="{'invisible': [('state', '!=', 'draft')]}"/>
+                    <button name="action_cancel" string="Hủy" type="object" class="btn-danger"
+                            attrs="{'invisible': [('state', 'in', ['cancelled', 'rejected'])]}"/>
                     <button name="action_reset_to_draft" string="Đặt lại chờ duyệt" type="object" 
                             attrs="{'invisible': [('state', '=', 'draft')]}"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,approved"/>
                 </header>
                 <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="toggle_active" type="object" class="oe_stat_button" icon="fa-check-circle"
+                                attrs="{'invisible': [('is_in_progress', '=', False)]}">
+                            <div class="o_stat_info">
+                                <span class="o_stat_text text-success">Đang diễn ra</span>
+                            </div>
+                        </button>
+                    </div>
                     <div class="oe_title">
                         <label for="description" class="oe_edit_only"/>
                         <h1>
@@ -42,16 +62,36 @@
                         <group>
                             <field name="meeting_room_id"/>
                             <field name="organizer_id"/>
+                            <field name="total_attendees" readonly="1"/>
                         </group>
                         <group>
                             <field name="start_time"/>
                             <field name="end_time"/>
+                            <field name="is_in_progress" invisible="1"/>
                         </group>
                     </group>
+                    
+                    <notebook>
+                        <page string="Người tham gia">
+                            <field name="participant_employee_ids" widget="many2many_tags">
+                                <tree>
+                                    <field name="ma_dinh_danh"/>
+                                    <field name="ho_ten"/>
+                                    <field name="email"/>
+                                    <field name="so_dien_thoai"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                    
                     <group string="Thông tin phê duyệt" attrs="{'invisible': [('state', '=', 'draft')]}">
                         <group>
                             <field name="approved_by"/>
                             <field name="approved_date"/>
+                        </group>
+                        <group attrs="{'invisible': [('state', '!=', 'cancelled')]}">
+                            <field name="cancelled_by"/>
+                            <field name="cancelled_date"/>
                         </group>
                     </group>
                 </sheet>
@@ -68,6 +108,7 @@
                 <field name="description"/>
                 <field name="meeting_room_id"/>
                 <field name="organizer_id"/>
+                <field name="total_attendees"/>
                 <field name="state"/>
             </calendar>
         </field>
@@ -82,9 +123,11 @@
                 <field name="description"/>
                 <field name="meeting_room_id"/>
                 <field name="organizer_id"/>
+                <field name="participant_employee_ids"/>
                 <filter string="Chờ duyệt" name="filter_draft" domain="[('state', '=', 'draft')]"/>
                 <filter string="Đã duyệt" name="filter_approved" domain="[('state', '=', 'approved')]"/>
                 <filter string="Từ chối" name="filter_rejected" domain="[('state', '=', 'rejected')]"/>
+                <filter string="Đã hủy" name="filter_cancelled" domain="[('state', '=', 'cancelled')]"/>
                 <group expand="0" string="Nhóm theo">
                     <filter string="Phòng họp" name="group_room" context="{'group_by': 'meeting_room_id'}"/>
                     <filter string="Người tổ chức" name="group_organizer" context="{'group_by': 'organizer_id'}"/>
