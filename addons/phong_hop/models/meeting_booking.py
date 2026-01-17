@@ -47,6 +47,43 @@ class MeetingBooking(models.Model):
     # Computed field to check if booking is currently active
     is_current = fields.Boolean(string='Đang diễn ra', compute='_compute_is_current', store=False)
     is_in_progress = fields.Boolean(string='Đang diễn ra (Real-time)', compute='_compute_is_in_progress', store=False)
+    
+    # Computed fields for UI permission visibility
+    user_can_approve_ui = fields.Boolean(string='User có quyền phê duyệt (UI)', 
+                                          compute='_compute_user_permissions_ui', store=False)
+    user_can_manage_booking_ui = fields.Boolean(string='User có quyền quản lý lịch (UI)', 
+                                                 compute='_compute_user_permissions_ui', store=False)
+    is_booking_creator = fields.Boolean(string='Là người tạo lịch', 
+                                        compute='_compute_user_permissions_ui', store=False)
+    
+    # Asset borrowing integration
+    don_muon_tai_san_id = fields.Many2one(
+        'don_muon_tai_san',
+        string='Đơn mượn tài sản',
+        readonly=True,
+        help='Đơn mượn tài sản tự động tạo khi booking được duyệt'
+    )
+    tai_san_muon_ids = fields.Many2many(
+        'phan_bo_tai_san',
+        string='Tài sản cần mượn',
+        help='Chọn tài sản cần mượn từ phòng ban quản lý phòng họp'
+    )
+    
+    @api.onchange('meeting_room_id')
+    def _onchange_meeting_room_id(self):
+        """Filter tài sản theo phòng ban quản lý của phòng họp"""
+        if self.meeting_room_id and self.meeting_room_id.phong_ban_quan_ly_id:
+            return {
+                'domain': {
+                    'tai_san_muon_ids': [('phong_ban_id', '=', self.meeting_room_id.phong_ban_quan_ly_id.id)]
+                }
+            }
+        else:
+            return {
+                'domain': {
+                    'tai_san_muon_ids': [('id', '=', False)]  # Không hiển thị tài sản nào
+                }
+            }
 
     @api.depends('organizer_id', 'participant_employee_ids')
     def _compute_total_attendees(self):
@@ -72,6 +109,25 @@ class MeetingBooking(models.Model):
             booking.is_in_progress = (
                 booking.state == 'approved' and
                 booking.start_time <= now <= booking.end_time
+            )
+    
+    def _compute_user_permissions_ui(self):
+        """Tính toán quyền của user hiện tại để hiển thị/ẩn nút trên UI"""
+        for booking in self:
+            # Check quyền phê duyệt
+            booking.user_can_approve_ui = booking._user_can_approve()
+            
+            # Check quyền quản lý lịch họp
+            booking.user_can_manage_booking_ui = booking._user_can_manage_bookings()
+            
+            # Check xem user hiện tại có phải người tạo lịch không
+            current_employee = False
+            if hasattr(self.env.user, 'employee_id') and self.env.user.employee_id:
+                current_employee = self.env.user.employee_id
+            
+            booking.is_booking_creator = (
+                current_employee and booking.nguoi_muon and 
+                current_employee.id == booking.nguoi_muon.id
             )
 
     @api.constrains('start_time', 'end_time', 'meeting_room_id', 'state')
@@ -138,6 +194,10 @@ class MeetingBooking(models.Model):
                 'approved_by': approved_by_id,
                 'approved_date': fields.Datetime.now()
             })
+            
+            # ⭐ TẠO ĐƠN MƯỢN TÀI SẢN SAU KHI DUYỆT
+            booking._create_asset_borrowing()
+        
         return True
 
     def action_reject(self):
@@ -165,6 +225,10 @@ class MeetingBooking(models.Model):
     def action_reset_to_draft(self):
         """Đưa đăng ký về trạng thái chờ duyệt"""
         for booking in self:
+            # Không cho phép đặt lại chờ duyệt nếu đơn đã bị hủy
+            if booking.state == 'cancelled':
+                raise ValidationError("Không thể đặt lại chờ duyệt cho đơn đã bị hủy!")
+            
             booking.write({
                 'state': 'draft',
                 'approved_by': False,
@@ -188,7 +252,74 @@ class MeetingBooking(models.Model):
                 'cancelled_by': cancelled_by_id,
                 'cancelled_date': fields.Datetime.now()
             })
+            
+            # ⭐ HỦY ĐƠN MƯỢN TÀI SẢN NẾU CÓ
+            if booking.don_muon_tai_san_id:
+                booking.don_muon_tai_san_id.write({
+                    'trang_thai': 'da-huy'
+                })
+        
         return True
+    
+    # ========== ASSET BORROWING INTEGRATION ==========
+    
+    def _create_asset_borrowing(self):
+        """Tạo đơn mượn tài sản cho thiết bị user đã chọn"""
+        # Chỉ tạo nếu:
+        # 1. User đã chọn tài sản
+        # 2. Phòng có phòng ban quản lý
+        # 3. Chưa có đơn mượn (tránh duplicate)
+        if not self.tai_san_muon_ids:
+            return  # Không chọn tài sản → không cần tạo đơn mượn
+        
+        if not self.meeting_room_id.phong_ban_quan_ly_id:
+            raise ValidationError(
+                f"Phòng họp '{self.meeting_room_id.name}' chưa có phòng ban quản lý! "
+                "Vui lòng cấu hình phòng ban quản lý trước."
+            )
+        
+        if self.don_muon_tai_san_id:
+            return  # Đã có đơn mượn rồi
+        
+        phong_ban_cho_muon = self.meeting_room_id.phong_ban_quan_ly_id
+        
+        # Xác định nhân viên mượn
+        nhan_vien_muon_id = False
+        if self.nguoi_muon:
+            nhan_vien_muon_id = self.nguoi_muon.id
+        elif self.organizer_id:
+            nhan_vien_muon_id = self.organizer_id.id
+        
+        if not nhan_vien_muon_id:
+            raise ValidationError(
+                "Không xác định được nhân viên mượn tài sản! "
+                "Vui lòng kiểm tra lại thông tin người mượn phòng hoặc người tổ chức."
+            )
+        
+        # Tạo mã đơn mượn
+        ma_don_muon = f"MTS-PHONG-{self.id}-{fields.Datetime.now().strftime('%Y%m%d%H%M%S')}"
+        
+        # Tạo đơn mượn với trạng thái "Đã duyệt"
+        don_muon = self.env['don_muon_tai_san'].create({
+            'ma_don_muon': ma_don_muon,
+            'ten_don_muon': f'Mượn tài sản phòng {self.meeting_room_id.name}',
+            'phong_ban_cho_muon_id': phong_ban_cho_muon.id,
+            'thoi_gian_muon': self.start_time,
+            'thoi_gian_tra': self.end_time,
+            'nhan_vien_muon_id': nhan_vien_muon_id,
+            'ly_do': f'Cuộc họp: {self.description}',
+            'trang_thai': 'da-duyet',  # Tự động duyệt
+        })
+        
+        # Thêm các tài sản user đã chọn vào đơn mượn
+        for phan_bo in self.tai_san_muon_ids:
+            self.env['don_muon_tai_san_line'].create({
+                'don_muon_id': don_muon.id,
+                'phan_bo_tai_san_id': phan_bo.id,
+            })
+        
+        # Lưu link đến đơn mượn
+        self.don_muon_tai_san_id = don_muon.id
     
     # ========== PERMISSION METHODS ==========
     
@@ -357,3 +488,95 @@ class MeetingBooking(models.Model):
             })
         
         return booking
+    
+    def _user_can_manage_bookings(self):
+        """
+        Kiểm tra user có quyền quản lý (sửa/xóa) lịch họp không
+        Returns: Boolean
+        """
+        # Admin luôn có quyền
+        if self.env.user.has_group('base.group_system'):
+            return True
+        
+        Permission = self.env['phong_hop.permission']
+        user = self.env.user
+        
+        # Lấy employee của user
+        employee = False
+        if hasattr(user, 'employee_id') and user.employee_id:
+            employee = user.employee_id
+        
+        # Check theo nhân viên
+        if employee:
+            if Permission.search([
+                ('permission_type', '=', 'user'),
+                ('nhan_vien_id', '=', employee.id),
+                ('can_manage_bookings', '=', True)
+            ], limit=1):
+                return True
+        
+        # Check theo phòng ban
+        if employee and hasattr(employee, 'phong_ban_id') and employee.phong_ban_id:
+            if Permission.search([
+                ('permission_type', '=', 'phong_ban'),
+                ('phong_ban_id', '=', employee.phong_ban_id.id),
+                ('can_manage_bookings', '=', True)
+            ], limit=1):
+                return True
+        
+        # Check theo chức vụ
+        if employee and hasattr(employee, 'chuc_vu_id') and employee.chuc_vu_id:
+            if Permission.search([
+                ('permission_type', '=', 'chuc_vu'),
+                ('chuc_vu_id', '=', employee.chuc_vu_id.id),
+                ('can_manage_bookings', '=', True)
+            ], limit=1):
+                return True
+        
+        return False
+    
+    def write(self, vals):
+        """Override write để kiểm tra quyền quản lý lịch họp"""
+        for booking in self:
+            # Admin luôn có quyền (kể cả sửa đơn đã hủy)
+            if self.env.user.has_group('base.group_system'):
+                continue
+            
+            # Không cho phép chỉnh sửa đơn đã bị hủy (trừ admin)
+            if booking.state == 'cancelled':
+                raise ValidationError("Không thể chỉnh sửa đơn mượn phòng đã bị hủy!")
+            
+            # Lấy employee của user hiện tại
+            current_employee = False
+            if hasattr(self.env.user, 'employee_id') and self.env.user.employee_id:
+                current_employee = self.env.user.employee_id
+            
+            # Người tạo lịch họp được phép sửa lịch của chính họ
+            is_creator = current_employee and booking.nguoi_muon and current_employee.id == booking.nguoi_muon.id
+            
+            # Nếu không phải người tạo và không có quyền quản lý
+            if not is_creator and not booking._user_can_manage_bookings():
+                raise ValidationError("Bạn không có quyền quản lý lịch họp!")
+        
+        return super(MeetingBooking, self).write(vals)
+    
+    def unlink(self):
+        """Override unlink để kiểm tra quyền xóa lịch họp"""
+        for booking in self:
+            # Admin luôn có quyền
+            if self.env.user.has_group('base.group_system'):
+                continue
+            
+            # Lấy employee của user hiện tại
+            current_employee = False
+            if hasattr(self.env.user, 'employee_id') and self.env.user.employee_id:
+                current_employee = self.env.user.employee_id
+            
+            # Người tạo lịch họp được phép xóa lịch của chính họ
+            is_creator = current_employee and booking.nguoi_muon and current_employee.id == booking.nguoi_muon.id
+            
+            # Nếu không phải người tạo và không có quyền quản lý
+            if not is_creator and not booking._user_can_manage_bookings():
+                raise ValidationError("Bạn không có quyền quản lý lịch họp!")
+        
+        return super(MeetingBooking, self).unlink()

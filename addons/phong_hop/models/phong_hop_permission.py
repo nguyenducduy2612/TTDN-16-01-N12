@@ -29,6 +29,11 @@ class PhongHopPermission(models.Model):
                                   help='Cho phép phê duyệt/từ chối yêu cầu mượn phòng')
     auto_approve = fields.Boolean('Tự động phê duyệt khi mượn',
                                    help='Yêu cầu mượn phòng sẽ tự động được duyệt')
+    can_manage_rooms = fields.Boolean('Quản lý phòng họp',
+                                       help='Cho phép sửa/xóa phòng họp (bất kỳ phòng nào)')
+    can_manage_bookings = fields.Boolean('Quản lý lịch họp',
+                                          help='Cho phép sửa/xóa lịch đặt phòng (của bất kỳ ai)')
+
     
     @api.constrains('permission_type', 'nhan_vien_id', 'phong_ban_id', 'chuc_vu_id')
     def _check_permission_target(self):

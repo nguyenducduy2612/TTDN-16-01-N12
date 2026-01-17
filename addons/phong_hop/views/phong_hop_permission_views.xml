@@ -15,6 +15,8 @@
                     <field name="can_create_booking" widget="boolean_toggle"/>
                     <field name="can_approve" widget="boolean_toggle"/>
                     <field name="auto_approve" widget="boolean_toggle"/>
+                    <field name="can_manage_rooms" widget="boolean_toggle"/>
+                    <field name="can_manage_bookings" widget="boolean_toggle"/>
                 </tree>
             </field>
         </record>
@@ -42,6 +44,8 @@
                                 <field name="can_create_booking"/>
                                 <field name="can_approve"/>
                                 <field name="auto_approve" attrs="{'invisible': [('can_create_booking', '=', False)]}"/>
+                                <field name="can_manage_rooms"/>
+                                <field name="can_manage_bookings"/>
                             </group>
                         </group>
                         <group>
@@ -52,6 +56,8 @@
                                         <li><strong>Được mượn phòng:</strong> Cho phép tạo yêu cầu mượn phòng họp</li>
                                         <li><strong>Được phê duyệt:</strong> Cho phép phê duyệt/từ chối yêu cầu của người khác</li>
                                         <li><strong>Tự động phê duyệt:</strong> Yêu cầu mượn phòng sẽ tự động được duyệt (không cần chờ)</li>
+                                        <li><strong>Quản lý phòng họp:</strong> Cho phép sửa/xóa bất kỳ phòng họp nào</li>
+                                        <li><strong>Quản lý lịch họp:</strong> Cho phép sửa/xóa lịch đặt phòng của bất kỳ ai (người tạo lịch luôn được sửa/xóa lịch của mình)</li>
                                     </ul>
                                 </div>
                             </group>

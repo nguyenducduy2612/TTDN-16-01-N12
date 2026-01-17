@@ -12,6 +12,7 @@
                 <field name="booking_count"/>
                 <field name="total_hours_used" widget="float_time"/>
                 <field name="status" widget="badge" decoration-success="status == 'free'" decoration-warning="status == 'occupied'" decoration-danger="status == 'maintenance'"/>
+                <field name="user_can_manage_room_ui" invisible="1"/>
             </tree>
         </field>
     </record>
@@ -44,21 +45,13 @@
                         <group>
                             <field name="location"/>
                             <field name="capacity"/>
+                            <field name="phong_ban_quan_ly_id"/>
                         </group>
                         <group>
                             <field name="manual_status" widget="radio"/>
                         </group>
                     </group>
                     <notebook>
-                        <page string="Thiết bị đi kèm">
-                            <field name="equipment_ids">
-                                <tree string="Thiết bị">
-                                    <field name="ma_tai_san"/>
-                                    <field name="ten_tai_san"/>
-                                    <field name="trang_thai_thanh_ly"/>
-                                </tree>
-                            </field>
-                        </page>
                         <page string="Lịch sử đặt phòng">
                             <field name="booking_ids">
                                 <tree string="Lịch đặt phòng" decoration-success="state == 'approved'" decoration-muted="state == 'rejected'">
