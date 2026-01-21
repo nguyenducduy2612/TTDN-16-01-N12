@@ -142,8 +142,12 @@ class MeetingBooking(models.Model):
             if not self.env.user.has_group('base.group_system'):
                 if booking.start_time < fields.Datetime.now():
                     raise ValidationError("Không thể đặt phòng vào thời gian trong quá khứ!")
+            
+            # Validate 3: Không cho đặt phòng đang bảo trì
+            if booking.meeting_room_id.manual_status == 'maintenance':
+                raise ValidationError(f"Phòng {booking.meeting_room_id.name} đang trong trạng thái bảo trì, không thể đặt phòng!")
 
-            # Validate 3: Chỉ check trùng lịch với các booking đã duyệt
+            # Validate 4: Chỉ check trùng lịch với các booking đã duyệt
             domain = [
                 ('meeting_room_id', '=', booking.meeting_room_id.id),
                 ('id', '!=', booking.id),

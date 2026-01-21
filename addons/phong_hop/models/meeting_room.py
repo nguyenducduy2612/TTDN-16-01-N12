@@ -164,16 +164,11 @@ class MeetingRoom(models.Model):
                     total_hours += duration.total_seconds() / 3600  # Convert to hours
             room.total_hours_used = total_hours
     
-    def _compute_user_can_manage_room_ui(self):
-        """Tính toán quyền của user hiện tại để hiển thị/ẩn nút trên UI"""
-        for room in self:
-            room.user_can_manage_room_ui = room._user_can_manage_rooms()
-
     # ========== PERMISSION METHODS ==========
     
-    def _user_can_manage_rooms(self):
+    def _user_can_manage_room(self):
         """
-        Kiểm tra user có quyền quản lý (sửa/xóa) phòng họp không
+        Kiểm tra user có quyền quản lý phòng họp không
         Returns: Boolean
         """
         # Admin luôn có quyền
@@ -193,7 +188,7 @@ class MeetingRoom(models.Model):
             if Permission.search([
                 ('permission_type', '=', 'user'),
                 ('nhan_vien_id', '=', employee.id),
-                ('can_manage_rooms', '=', True)
+                ('can_manage_room', '=', True)
             ], limit=1):
                 return True
         
@@ -202,7 +197,7 @@ class MeetingRoom(models.Model):
             if Permission.search([
                 ('permission_type', '=', 'phong_ban'),
                 ('phong_ban_id', '=', employee.phong_ban_id.id),
-                ('can_manage_rooms', '=', True)
+                ('can_manage_room', '=', True)
             ], limit=1):
                 return True
         
@@ -211,7 +206,7 @@ class MeetingRoom(models.Model):
             if Permission.search([
                 ('permission_type', '=', 'chuc_vu'),
                 ('chuc_vu_id', '=', employee.chuc_vu_id.id),
-                ('can_manage_rooms', '=', True)
+                ('can_manage_room', '=', True)
             ], limit=1):
                 return True
         
@@ -220,27 +215,19 @@ class MeetingRoom(models.Model):
     @api.model
     def create(self, vals):
         """Override create để kiểm tra quyền tạo phòng họp"""
-        # Check quyền quản lý phòng họp
-        if not self._user_can_manage_rooms():
-            raise ValidationError("Bạn không có quyền quản lý phòng họp!")
-        
+        if not self._user_can_manage_room():
+            raise ValidationError("Bạn không có quyền tạo phòng họp!")
         return super(MeetingRoom, self).create(vals)
     
     def write(self, vals):
-        """Override write để kiểm tra quyền quản lý phòng họp"""
-        # Check quyền quản lý phòng họp
-        if not self._user_can_manage_rooms():
-            raise ValidationError("Bạn không có quyền quản lý phòng họp!")
-        
-        result = super(MeetingRoom, self).write(vals)
-        
-        return result
+        """Override write để kiểm tra quyền sửa phòng họp"""
+        if not self._user_can_manage_room():
+            raise ValidationError("Bạn không có quyền chỉnh sửa phòng họp!")
+        return super(MeetingRoom, self).write(vals)
     
     def unlink(self):
         """Override unlink để kiểm tra quyền xóa phòng họp"""
-        # Check quyền quản lý phòng họp
-        if not self._user_can_manage_rooms():
-            raise ValidationError("Bạn không có quyền quản lý phòng họp!")
-        
+        if not self._user_can_manage_room():
+            raise ValidationError("Bạn không có quyền xóa phòng họp!")
         return super(MeetingRoom, self).unlink()
 
