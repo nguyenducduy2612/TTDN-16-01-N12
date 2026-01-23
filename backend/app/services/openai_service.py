@@ -13,7 +13,12 @@ class OpenAIService:
     
     def __init__(self):
         """Initialize OpenAI client"""
-        self.client = OpenAI(api_key=settings.openai_api_key)
+        # Initialize client with optional custom base URL
+        client_kwargs = {"api_key": settings.openai_api_key}
+        if settings.openai_base_url:
+            client_kwargs["base_url"] = settings.openai_base_url
+        
+        self.client = OpenAI(**client_kwargs)
         self.model = settings.openai_model
         
         # Define function schemas

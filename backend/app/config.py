@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     # OpenAI
     openai_api_key: str
     openai_model: str = "gpt-4"
+    openai_base_url: str = ""  # Optional custom base URL
     
     # Odoo
     odoo_url: str
@@ -22,6 +23,10 @@ class Settings(BaseSettings):
     backend_host: str = "0.0.0.0"
     backend_port: int = 8000
     debug: bool = False
+    environment: str = "development"
+    
+    # CORS
+    cors_origins: str = "*"
     
     # CORS
     cors_origins: str = "*"
