@@ -69,6 +69,24 @@ class MeetingBooking(models.Model):
         help='Chọn tài sản cần mượn từ phòng ban quản lý phòng họp'
     )
     
+    # Duration field for statistics
+    duration_hours = fields.Float(
+        string='Thời lượng (giờ)',
+        compute='_compute_duration_hours',
+        store=True,
+        help='Thời lượng cuộc họp tính bằng giờ'
+    )
+    
+    @api.depends('start_time', 'end_time')
+    def _compute_duration_hours(self):
+        """Tính thời lượng cuộc họp bằng giờ"""
+        for booking in self:
+            if booking.start_time and booking.end_time:
+                duration = booking.end_time - booking.start_time
+                booking.duration_hours = duration.total_seconds() / 3600
+            else:
+                booking.duration_hours = 0.0
+    
     @api.onchange('meeting_room_id')
     def _onchange_meeting_room_id(self):
         """Filter tài sản theo phòng ban quản lý của phòng họp"""
@@ -199,8 +217,11 @@ class MeetingBooking(models.Model):
                 'approved_date': fields.Datetime.now()
             })
             
-            # ⭐ TẠO ĐƠN MƯỢN TÀI SẢN SAU KHI DUYỆT
-            booking._create_asset_borrowing()
+            # ⭐ CẬP NHẬT TRẠNG THÁI ĐƠN MƯỢN TÀI SẢN
+            if booking.don_muon_tai_san_id:
+                booking.don_muon_tai_san_id.write({
+                    'trang_thai': 'da-duyet'
+                })
         
         return True
 
@@ -224,6 +245,12 @@ class MeetingBooking(models.Model):
                 'approved_by': approved_by_id,
                 'approved_date': fields.Datetime.now()
             })
+            
+            # ⭐ HỦY ĐƠN MƯỢN TÀI SẢN NẾU CÓ
+            if booking.don_muon_tai_san_id:
+                booking.don_muon_tai_san_id.write({
+                    'trang_thai': 'da-huy'
+                })
         return True
 
     def action_reset_to_draft(self):
@@ -238,6 +265,12 @@ class MeetingBooking(models.Model):
                 'approved_by': False,
                 'approved_date': False
             })
+            
+            # ⭐ ĐẶT LẠI TRẠNG THÁI ĐƠN MƯỢN TÀI SẢN
+            if booking.don_muon_tai_san_id:
+                booking.don_muon_tai_san_id.write({
+                    'trang_thai': 'dang-cho'
+                })
         return True
     
     def action_cancel(self):
@@ -267,8 +300,13 @@ class MeetingBooking(models.Model):
     
     # ========== ASSET BORROWING INTEGRATION ==========
     
-    def _create_asset_borrowing(self):
-        """Tạo đơn mượn tài sản cho thiết bị user đã chọn"""
+    def _create_asset_borrowing(self, initial_state='dang-cho'):
+        """
+        Tạo đơn mượn tài sản cho thiết bị user đã chọn
+        
+        Args:
+            initial_state: Trạng thái ban đầu của đơn mượn ('dang-cho' hoặc 'da-duyet')
+        """
         # Chỉ tạo nếu:
         # 1. User đã chọn tài sản
         # 2. Phòng có phòng ban quản lý
@@ -303,7 +341,7 @@ class MeetingBooking(models.Model):
         # Tạo mã đơn mượn
         ma_don_muon = f"MTS-PHONG-{self.id}-{fields.Datetime.now().strftime('%Y%m%d%H%M%S')}"
         
-        # Tạo đơn mượn với trạng thái "Đã duyệt"
+        # Tạo đơn mượn với trạng thái được chỉ định
         don_muon = self.env['don_muon_tai_san'].create({
             'ma_don_muon': ma_don_muon,
             'ten_don_muon': f'Mượn tài sản phòng {self.meeting_room_id.name}',
@@ -312,7 +350,7 @@ class MeetingBooking(models.Model):
             'thoi_gian_tra': self.end_time,
             'nhan_vien_muon_id': nhan_vien_muon_id,
             'ly_do': f'Cuộc họp: {self.description}',
-            'trang_thai': 'da-duyet',  # Tự động duyệt
+            'trang_thai': initial_state,  # Trạng thái linh hoạt
         })
         
         # Thêm các tài sản user đã chọn vào đơn mượn
@@ -479,7 +517,9 @@ class MeetingBooking(models.Model):
         booking = super(MeetingBooking, self).create(vals)
         
         # Check xem user có quyền tự động duyệt không
-        if booking._user_has_auto_approve():
+        has_auto_approve = booking._user_has_auto_approve()
+        
+        if has_auto_approve:
             # Lấy employee_id nếu có
             approved_by_id = False
             if hasattr(self.env.user, 'employee_id') and self.env.user.employee_id:
@@ -490,6 +530,12 @@ class MeetingBooking(models.Model):
                 'approved_by': approved_by_id,
                 'approved_date': fields.Datetime.now()
             })
+            
+            # ⭐ TẠO ĐƠN MƯỢN TÀI SẢN VỚI TRẠNG THÁI "ĐÃ DUYỆT"
+            booking._create_asset_borrowing(initial_state='da-duyet')
+        else:
+            # ⭐ TẠO ĐƠN MƯỢN TÀI SẢN VỚI TRẠNG THÁI "ĐANG CHỜ"
+            booking._create_asset_borrowing(initial_state='dang-cho')
         
         return booking
     

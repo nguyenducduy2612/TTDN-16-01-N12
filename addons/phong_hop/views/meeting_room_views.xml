@@ -53,7 +53,7 @@
                     </group>
                     <notebook>
                         <page string="Lịch sử đặt phòng">
-                            <field name="booking_ids">
+                            <field name="booking_ids" readonly="1">
                                 <tree string="Lịch đặt phòng" decoration-success="state == 'approved'" decoration-muted="state == 'rejected'">
                                     <field name="start_time"/>
                                     <field name="end_time"/>

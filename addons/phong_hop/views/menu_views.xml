@@ -27,6 +27,13 @@
               action="action_meeting_statistics"
               sequence="10"/>
     
+    <!-- Báo cáo thống kê -->
+    <menuitem id="menu_meeting_booking_statistics"
+              name="Báo cáo thống kê sử dụng"
+              parent="menu_meeting_statistics_main"
+              action="action_meeting_booking_statistics"
+              sequence="20"/>
+    
     <!-- Config Menu -->
     <menuitem id="menu_phong_hop_config"
               name="Cấu hình"

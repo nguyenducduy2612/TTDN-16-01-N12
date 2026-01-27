@@ -135,6 +135,18 @@
             </calendar>
         </field>
     </record>
+    
+    <!-- Graph View for Statistics -->
+    <record id="view_meeting_booking_graph" model="ir.ui.view">
+        <field name="name">meeting.booking.graph</field>
+        <field name="model">meeting.booking</field>
+        <field name="arch" type="xml">
+            <graph string="Thống kê sử dụng phòng họp" type="bar" sample="1">
+                <field name="start_time" type="row" interval="day"/>
+                <field name="duration_hours" type="measure"/>
+            </graph>
+        </field>
+    </record>
 
     <!-- Search View -->
     <record id="view_meeting_booking_search" model="ir.ui.view">
@@ -146,14 +158,39 @@
                 <field name="meeting_room_id"/>
                 <field name="organizer_id"/>
                 <field name="participant_employee_ids"/>
+                
+                <!-- Status filters -->
                 <filter string="Chờ duyệt" name="filter_draft" domain="[('state', '=', 'draft')]"/>
                 <filter string="Đã duyệt" name="filter_approved" domain="[('state', '=', 'approved')]"/>
                 <filter string="Từ chối" name="filter_rejected" domain="[('state', '=', 'rejected')]"/>
                 <filter string="Đã hủy" name="filter_cancelled" domain="[('state', '=', 'cancelled')]"/>
+                
+                <separator/>
+                
+                <!-- Date range filters for statistics -->
+                <filter string="Hôm nay" name="today"
+                        domain="[('start_time', '&gt;=', context_today().strftime('%Y-%m-%d 00:00:00')),
+                                ('start_time', '&lt;', (context_today() + datetime.timedelta(days=1)).strftime('%Y-%m-%d 00:00:00'))]"/>
+                <filter string="Tuần này" name="this_week"
+                        domain="[('start_time', '&gt;=', (context_today() - datetime.timedelta(days=context_today().weekday())).strftime('%Y-%m-%d 00:00:00')),
+                                ('start_time', '&lt;', (context_today() + datetime.timedelta(days=7-context_today().weekday())).strftime('%Y-%m-%d 00:00:00'))]"/>
+                <filter string="Tháng này" name="this_month"
+                        domain="[('start_time', '&gt;=', context_today().strftime('%Y-%m-01 00:00:00')),
+                                ('start_time', '&lt;', (context_today().replace(day=1) + datetime.timedelta(days=32)).replace(day=1).strftime('%Y-%m-%d 00:00:00'))]"/>
+                <filter string="Năm nay" name="this_year"
+                        domain="[('start_time', '&gt;=', context_today().strftime('%Y-01-01 00:00:00')),
+                                ('start_time', '&lt;', (context_today().replace(month=1, day=1) + datetime.timedelta(days=366)).replace(month=1, day=1).strftime('%Y-%m-%d 00:00:00'))]"/>
+                
+                <!-- Group by -->
                 <group expand="0" string="Nhóm theo">
                     <filter string="Phòng họp" name="group_room" context="{'group_by': 'meeting_room_id'}"/>
                     <filter string="Người tổ chức" name="group_organizer" context="{'group_by': 'organizer_id'}"/>
                     <filter string="Trạng thái" name="group_state" context="{'group_by': 'state'}"/>
+                    <separator/>
+                    <filter string="Ngày" name="group_by_day" context="{'group_by': 'start_time:day'}"/>
+                    <filter string="Tuần" name="group_by_week" context="{'group_by': 'start_time:week'}"/>
+                    <filter string="Tháng" name="group_by_month" context="{'group_by': 'start_time:month'}"/>
+                    <filter string="Năm" name="group_by_year" context="{'group_by': 'start_time:year'}"/>
                 </group>
             </search>
         </field>
@@ -169,6 +206,27 @@
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 Tạo lịch đặt phòng mới
+            </p>
+        </field>
+    </record>
+    
+    <!-- Statistics Action -->
+    <record id="action_meeting_booking_statistics" model="ir.actions.act_window">
+        <field name="name">Báo cáo thống kê</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">meeting.booking</field>
+        <field name="view_mode">graph,pivot</field>
+        <field name="domain">[('state', '=', 'approved')]</field>
+        <field name="context">{
+            'search_default_this_month': 1,
+            'search_default_group_by_day': 1
+        }</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Chưa có dữ liệu thống kê
+            </p>
+            <p>
+                Biểu đồ sẽ hiển thị thời gian sử dụng phòng họp theo ngày.
             </p>
         </field>
     </record>

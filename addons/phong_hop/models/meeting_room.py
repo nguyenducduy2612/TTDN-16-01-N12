@@ -8,11 +8,12 @@ class MeetingRoom(models.Model):
     _rec_name = 'name'
 
     name = fields.Char(string='Tên phòng', required=True)
-    capacity = fields.Integer(string='Sức chứa', default=10)
+    capacity = fields.Integer(string='Sức chứa', default=1, required=True)
     location = fields.Char(string='Vị trí')
     phong_ban_quan_ly_id = fields.Many2one(
         'phong_ban',
         string='Phòng ban quản lý',
+        required=True,
         help='Phòng ban chịu trách nhiệm quản lý phòng họp này và cung cấp tài sản khi mượn'
     )
     
@@ -163,6 +164,18 @@ class MeetingRoom(models.Model):
                     duration = booking.end_time - booking.start_time
                     total_hours += duration.total_seconds() / 3600  # Convert to hours
             room.total_hours_used = total_hours
+    
+    def _compute_user_can_manage_room_ui(self):
+        """Tính toán quyền quản lý phòng của user hiện tại để hiển thị trên UI"""
+        for room in self:
+            room.user_can_manage_room_ui = room._user_can_manage_room()
+    
+    @api.constrains('capacity')
+    def _check_capacity(self):
+        """Validate that capacity is greater than 0"""
+        for room in self:
+            if room.capacity <= 0:
+                raise ValidationError("Sức chứa phải là số nguyên lớn hơn 0!")
     
     # ========== PERMISSION METHODS ==========
     
