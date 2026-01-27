@@ -6,40 +6,33 @@
     <!-- Sub menu -->
     <menuitem id="menu_meeting_room_main" name="Quản lý phòng" parent="menu_phong_hop_root" sequence="10"/>
     <menuitem id="menu_meeting_booking_main" name="Quản lý đặt phòng" parent="menu_phong_hop_root" sequence="20"/>
-    <menuitem id="menu_meeting_statistics_main" name="Thống kê" parent="menu_phong_hop_root" sequence="30"/>
 
-    <!-- Acion menu -->
+    <!-- Action menu -->
     <menuitem id="menu_meeting_room_list"
               name="Danh sách phòng họp"
               parent="menu_meeting_room_main"
               action="action_meeting_room"
               sequence="10"/>
-              
+
     <menuitem id="menu_meeting_booking_list"
               name="Danh sách mượn phòng"
               parent="menu_meeting_booking_main"
               action="action_meeting_booking"
               sequence="10"/>
-    
+
+    <!-- Thống kê - chỉ 1 menu duy nhất -->
     <menuitem id="menu_meeting_statistics"
-              name="Báo cáo thống kê"
-              parent="menu_meeting_statistics_main"
+              name="Thống kê sử dụng"
+              parent="menu_phong_hop_root"
               action="action_meeting_statistics"
-              sequence="10"/>
-    
-    <!-- Báo cáo thống kê -->
-    <menuitem id="menu_meeting_booking_statistics"
-              name="Báo cáo thống kê sử dụng"
-              parent="menu_meeting_statistics_main"
-              action="action_meeting_booking_statistics"
-              sequence="20"/>
-    
+              sequence="30"/>
+
     <!-- Config Menu -->
     <menuitem id="menu_phong_hop_config"
               name="Cấu hình"
               parent="menu_phong_hop_root"
               sequence="100"/>
-    
+
     <menuitem id="menu_phong_hop_permission"
               name="Phân quyền tài khoản"
               parent="menu_phong_hop_config"

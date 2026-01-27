@@ -1,59 +1,72 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Wizard Form View -->
-    <record id="view_meeting_statistics_form" model="ir.ui.view">
-        <field name="name">meeting.statistics.form</field>
-        <field name="model">meeting.statistics</field>
-        <field name="arch" type="xml">
-            <form string="Thống kê sử dụng phòng họp">
-                <group>
-                    <group>
-                        <field name="date_from"/>
-                        <field name="date_to"/>
-                    </group>
-                    <group>
-                        <field name="room_ids" widget="many2many_tags"/>
-                    </group>
-                </group>
-                <footer>
-                    <button name="action_view_most_used_rooms" string="Phòng sử dụng nhiều nhất" type="object" class="oe_highlight"/>
-                    <button name="action_view_peak_hours" string="Khung giờ cao điểm" type="object" class="oe_highlight"/>
-                    <button string="Đóng" class="btn-secondary" special="cancel"/>
-                </footer>
-            </form>
-        </field>
-    </record>
-
-    <!-- Action to open wizard -->
-    <record id="action_meeting_statistics" model="ir.actions.act_window">
-        <field name="name">Thống kê phòng họp</field>
-        <field name="type">ir.actions.act_window</field>
-        <field name="res_model">meeting.statistics</field>
-        <field name="view_mode">form</field>
-        <field name="target">new</field>
-    </record>
-
-    <!-- Graph view for meeting booking -->
-    <record id="view_meeting_booking_graph" model="ir.ui.view">
-        <field name="name">meeting.booking.graph</field>
+    <!-- Graph view for statistics - Biểu đồ thống kê sử dụng phòng họp -->
+    <!-- Trục X: Thời gian (ngày), Trục Y: Số giờ mượn, Cột: Phòng họp -->
+    <record id="view_meeting_booking_statistics_graph" model="ir.ui.view">
+        <field name="name">meeting.booking.statistics.graph</field>
         <field name="model">meeting.booking</field>
         <field name="arch" type="xml">
-            <graph string="Thống kê đặt phòng" type="bar">
-                <field name="meeting_room_id" type="row"/>
-                <field name="start_time" type="row" interval="hour"/>
+            <graph string="Thống kê sử dụng phòng họp" type="bar" stacked="False">
+                <field name="start_time" type="row" interval="day"/>
+                <field name="meeting_room_id" type="col"/>
+                <field name="duration_hours" type="measure"/>
             </graph>
         </field>
     </record>
 
-    <!-- Pivot view for meeting booking -->
-    <record id="view_meeting_booking_pivot" model="ir.ui.view">
-        <field name="name">meeting.booking.pivot</field>
+    <!-- Search view for statistics -->
+    <record id="view_meeting_booking_statistics_search" model="ir.ui.view">
+        <field name="name">meeting.booking.statistics.search</field>
         <field name="model">meeting.booking</field>
         <field name="arch" type="xml">
-            <pivot string="Phân tích đặt phòng">
-                <field name="meeting_room_id" type="row"/>
-                <field name="start_time" type="col" interval="day"/>
-            </pivot>
+            <search string="Lọc thống kê">
+                <field name="meeting_room_id"/>
+                <field name="start_time"/>
+
+                <!-- Lọc theo khoảng thời gian - sử dụng date_filter -->
+                <filter string="Hôm nay" name="filter_today"
+                        date="start_time" default_period="today"/>
+                <filter string="Tuần này" name="filter_this_week"
+                        date="start_time" default_period="this_week"/>
+                <filter string="Tháng này" name="filter_this_month"
+                        date="start_time" default_period="this_month"/>
+                <filter string="Năm nay" name="filter_this_year"
+                        date="start_time" default_period="this_year"/>
+
+                <separator/>
+
+                <!-- Nhóm theo -->
+                <group expand="1" string="Nhóm theo">
+                    <filter string="Phòng họp" name="group_room" context="{'group_by': 'meeting_room_id'}"/>
+                    <filter string="Ngày" name="group_by_day" context="{'group_by': 'start_time:day'}"/>
+                    <filter string="Tuần" name="group_by_week" context="{'group_by': 'start_time:week'}"/>
+                    <filter string="Tháng" name="group_by_month" context="{'group_by': 'start_time:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action for statistics - Full screen -->
+    <record id="action_meeting_statistics" model="ir.actions.act_window">
+        <field name="name">Thống kê sử dụng phòng họp</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">meeting.booking</field>
+        <field name="view_mode">graph</field>
+        <field name="view_id" ref="view_meeting_booking_statistics_graph"/>
+        <field name="search_view_id" ref="view_meeting_booking_statistics_search"/>
+        <field name="domain">[('state', '=', 'approved')]</field>
+        <field name="target">current</field>
+        <field name="context">{
+            'search_default_filter_this_month': 1
+        }</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Chưa có dữ liệu thống kê
+            </p>
+            <p>
+                Biểu đồ hiển thị số giờ sử dụng phòng họp theo ngày.
+                Sử dụng bộ lọc để xem theo Ngày/Tuần/Tháng.
+            </p>
         </field>
     </record>
 </odoo>

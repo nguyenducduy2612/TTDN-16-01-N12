@@ -136,18 +136,6 @@
         </field>
     </record>
     
-    <!-- Graph View for Statistics -->
-    <record id="view_meeting_booking_graph" model="ir.ui.view">
-        <field name="name">meeting.booking.graph</field>
-        <field name="model">meeting.booking</field>
-        <field name="arch" type="xml">
-            <graph string="Thống kê sử dụng phòng họp" type="bar" sample="1">
-                <field name="start_time" type="row" interval="day"/>
-                <field name="duration_hours" type="measure"/>
-            </graph>
-        </field>
-    </record>
-
     <!-- Search View -->
     <record id="view_meeting_booking_search" model="ir.ui.view">
         <field name="name">meeting.booking.search</field>
@@ -201,7 +189,7 @@
         <field name="name">Mượn phòng</field>
         <field name="type">ir.actions.act_window</field>
         <field name="res_model">meeting.booking</field>
-        <field name="view_mode">tree,form,calendar,graph,pivot</field>
+        <field name="view_mode">tree,form,calendar</field>
         <field name="search_view_id" ref="view_meeting_booking_search"/>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
@@ -209,25 +197,5 @@
             </p>
         </field>
     </record>
-    
-    <!-- Statistics Action -->
-    <record id="action_meeting_booking_statistics" model="ir.actions.act_window">
-        <field name="name">Báo cáo thống kê</field>
-        <field name="type">ir.actions.act_window</field>
-        <field name="res_model">meeting.booking</field>
-        <field name="view_mode">graph,pivot</field>
-        <field name="domain">[('state', '=', 'approved')]</field>
-        <field name="context">{
-            'search_default_this_month': 1,
-            'search_default_group_by_day': 1
-        }</field>
-        <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">
-                Chưa có dữ liệu thống kê
-            </p>
-            <p>
-                Biểu đồ sẽ hiển thị thời gian sử dụng phòng họp theo ngày.
-            </p>
-        </field>
-    </record>
+
 </odoo>
