@@ -181,7 +181,9 @@ Module Quản lý phòng họp hỗ trợ quản lý phòng họp, đặt lịch
 <p align="center">
         <img src="images/quanlyphonghop.jpg" alt="Gợi ý từ" width="800"/>
     </p>
-
+<p align="center">
+        <img src="images/thongkephonghop.jpg" alt="Gợi ý từ" width="800"/>
+images/thongkephonghop.jpg
 - Quản lý phòng hop:
   Quản lý thông tin phòng họp: tên phòng, vị trí, sức chứa
 
