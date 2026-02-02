@@ -60,7 +60,7 @@ Một số project sinh viên đã thực hiện:
 
 #### 4.1.1. Tải project.
 ```
-git clone https://github.com/FIT-DNU/Business-Internship.git
+git clone https://github.com/nguyenducduy2612/TTDN-16-01-N12
 ```
 #### 4.1.2. Cài đặt các thư viện cần thiết
 Người sử dụng thực thi các lệnh sau đề cài đặt các thư viện cần thiết
@@ -111,7 +111,7 @@ Người sử dụng truy cập theo đường dẫn _http://localhost:8069/_ đ
 ### 5.1. Module quản lý nhân sự
 Module Quản lý nhân sự hỗ trợ quản lý toàn bộ thông tin nhân sự và cơ cấu tổ chức của doanh nghiệp, giúp theo dõi quá trình làm việc và phân công nhân sự một cách hiệu quả.
 <p align="center">
-        <img src="images/quanlynhansu.jpg" alt="Gợi ý từ" width="800"/>
+        <img src="images/quanlynhansu.jpg" alt="Gquanlynhansu" width="800"/>
     </p>
     
 - Quản lý nhân viên:
@@ -147,7 +147,7 @@ Module Quản lý nhân sự hỗ trợ quản lý toàn bộ thông tin nhân s
 ### 5.2. Module quản lý tài sản
 Module Quản lý tài sản giúp doanh nghiệp quản lý, theo dõi và kiểm soát các tài sản phục vụ hoạt động nội bộ, đảm bảo sử dụng hiệu quả và minh bạch.
 <p align="center">
-        <img src="images/quanlytaisan.jpg" alt="Gợi ý từ" width="800"/>
+        <img src="images/quanlytaisan.jpg" alt="quanlytaisan" width="800"/>
     </p>
     
 - Quản lý danh mục tài sản:
@@ -179,10 +179,10 @@ Module Quản lý tài sản giúp doanh nghiệp quản lý, theo dõi và ki�
 ### 5.3. Module quản lý phòng họp
 Module Quản lý phòng họp hỗ trợ quản lý phòng họp, đặt lịch và theo dõi việc sử dụng phòng họp trong doanh nghiệp một cách trực quan và thuận tiện.
 <p align="center">
-        <img src="images/quanlyphonghop.jpg" alt="Gợi ý từ" width="800"/>
+        <img src="images/quanlyphonghop.jpg" alt="quanlyphonghop" width="800"/>
     </p>
 <p align="center">
-        <img src="images/thongkephonghop.jpg" alt="Gợi ý từ" width="800"/>
+        <img src="images/thongkephonghop.jpg" alt="thongkephonghop" width="800"/>
 images/thongkephonghop.jpg
 - Quản lý phòng hop:
   Quản lý thông tin phòng họp: tên phòng, vị trí, sức chứa
@@ -216,15 +216,18 @@ images/thongkephonghop.jpg
 ## 6. Sơ đồ Use case, class diagram
 - Use case:
   <p align="center">
-        <img src="images/usecase.png" alt="Gợi ý từ" width="800"/>
+        <img src="images/usecase.png" alt="usecase" width="800"/>
     </p>
 
 - Class diagram:
   <p align="center">
-        <img src="images/class_diagram.png" alt="Gợi ý từ" width="800"/>
+        <img src="images/class_diagram.png" alt="class_diagram" width="800"/>
     </p>
-
-## 📝 7. License
+## 📝 7. Poster Nhóm 12
+  <p align="center">
+        <img src="images/poster.png" alt="class_diagram" width="800"/>
+    </p>
+## 📝 8. License
 
 © 2024 AIoTLab, Faculty of Information Technology, DaiNam University. All rights reserved.
 
